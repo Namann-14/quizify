@@ -49,7 +49,6 @@ export default function Home() {
                   alt="Secure Online Exams & Instant Certification"
                   width={600}
                   height={400}
-                  layout="responsive"
                   className="mt-8 mx-auto"
                 />
               </div>

@@ -38,17 +38,17 @@ import { ThemeToggler } from "./theme-toggler";
 export function DashboardSidebar({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = usePathname(); // ✅ Always call hooks at the top level
+  const pathname = usePathname(); 
 
-  // ✅ Redirect to login page if not authenticated
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/");
     }
   }, [status, router]);
 
-  // ✅ Ensure component does not render before redirecting or when session is null
   if (status === "loading" || !session) return null;
+
 
   const isActive = (path) => pathname === path;
 

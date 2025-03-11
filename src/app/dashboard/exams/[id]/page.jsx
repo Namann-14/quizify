@@ -1,38 +1,82 @@
-import React from "react"
-import Link from "next/link"
-import { Calendar, Clock, FileText, Info } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { Calendar, Clock, FileText, Info, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import axios from "axios";
+import { useParams } from "next/navigation";
 
 export default function ExamDetailsPage({ params }) {
-  // Unwrap params using React.use()
-  const resolvedParams = React.use(params);
-  
-  // Mock exam data - in a real app, you would fetch this based on the ID
-  const exam = {
-    id: Number.parseInt(resolvedParams.id),
-    title: "Advanced Mathematics",
-    description:
-      "This comprehensive exam covers advanced calculus, linear algebra, and differential equations. It is designed to test your understanding of mathematical concepts and problem-solving abilities.",
-    date: "2025-03-15T10:00:00",
-    duration: 120,
-    totalQuestions: 50,
-    passingScore: 70,
-    topics: [
-      "Calculus: Limits, Derivatives, and Integrals",
-      "Linear Algebra: Matrices and Vector Spaces",
-      "Differential Equations: First and Second Order",
-      "Complex Analysis: Complex Numbers and Functions",
-      "Numerical Methods: Approximation and Error Analysis",
-    ],
-    instructions: [
-      "Read each question carefully before answering.",
-      "You can navigate between questions using the navigation panel.",
-      "You can mark questions for review and return to them later.",
-      "Once you submit the exam, you cannot return to it.",
-      "The exam will automatically submit when the time expires.",
-    ],
+  // Access the ID directly from params instead of using the 'use' hook
+  const examId = useParams().id;
+
+  const [exam, setExam] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchExamDetails = async () => {
+      try {
+        setIsLoading(true);
+        // Make an API call to fetch exam details by ID
+        const response = await axios.get(`/api/exam/${examId}`);
+
+        if (response.data.success) {
+          setExam(response.data.exam);
+        } else {
+          setError("Failed to load exam details. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error fetching exam details:", error);
+        setError("Failed to load exam details. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (examId) {
+      fetchExamDetails();
+    } else {
+      setIsLoading(false);
+      setError("Invalid exam ID");
+    }
+  }, [examId]);
+
+  // Render loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Loading exam details...</p>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error || !exam) {
+    return (
+      <Card className="min-h-[400px] flex flex-col items-center justify-center">
+        <CardContent className="pt-6 text-center">
+          <h2 className="text-xl font-bold text-destructive mb-2">Error</h2>
+          <p className="text-muted-foreground mb-4">
+            {error || "Exam not found"}
+          </p>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/exams">Back to Exams</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -40,104 +84,104 @@ export default function ExamDetailsPage({ params }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{exam.title}</h1>
-          <p className="text-muted-foreground">Exam ID: {exam.id}</p>
+          <p className="text-muted-foreground">Exam ID: {exam._id}</p>
         </div>
-        <Button size="lg" asChild>
-          <Link href={`/dashboard/exams/${exam.id}/take`}>Start Exam</Link>
-        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle>Exam Details</CardTitle>
-            <CardDescription>Information about the exam</CardDescription>
+            <CardDescription>{exam.description}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 flex-grow">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Date & Time</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Date & Time
+                </p>
                 <div className="flex items-center">
                   <Calendar className="mr-1 h-4 w-4 text-muted-foreground" />
                   <p>
-                    {new Date(exam.date).toLocaleDateString()} at{" "}
-                    {new Date(exam.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(exam.dateTime).toLocaleDateString()} at{" "}
+                    {new Date(exam.dateTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </p>
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Duration</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Duration
+                </p>
                 <div className="flex items-center">
                   <Clock className="mr-1 h-4 w-4 text-muted-foreground" />
                   <p>{exam.duration} minutes</p>
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Total Questions</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Questions
+                </p>
                 <div className="flex items-center">
                   <FileText className="mr-1 h-4 w-4 text-muted-foreground" />
                   <p>{exam.totalQuestions} questions</p>
                 </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Passing Score</p>
-                <div className="flex items-center">
-                  <Info className="mr-1 h-4 w-4 text-muted-foreground" />
-                  <p>{exam.passingScore}%</p>
+              {exam.passingScore && (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Passing Score
+                  </p>
+                  <div className="flex items-center">
+                    <Info className="mr-1 h-4 w-4 text-muted-foreground" />
+                    <p>{exam.passingScore}%</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <Separator />
 
             <div className="space-y-2">
               <p className="font-medium">Description</p>
-              <p className="text-sm text-muted-foreground">{exam.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {exam.description}
+              </p>
             </div>
           </CardContent>
         </Card>
 
         <div className="space-y-6">
-          <Card>
+          <Card className="h-full flex flex-col">
             <CardHeader>
-              <CardTitle>Topics Covered</CardTitle>
-              <CardDescription>Key areas that will be tested</CardDescription>
+              <CardTitle>Additional Information</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {exam.topics.map((topic, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="mr-2 mt-0.5 h-2 w-2 rounded-full bg-primary" />
-                    <span className="text-sm">{topic}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Exam Instructions</CardTitle>
-              <CardDescription>Please read carefully before starting</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {exam.instructions.map((instruction, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="mr-2 mt-0.5 text-sm font-medium">{index + 1}.</span>
-                    <span className="text-sm">{instruction}</span>
-                  </li>
-                ))}
-              </ul>
+            <CardContent className="flex-grow">
+              {!exam.topics && !exam.instructions && (
+                <div className="mt-4">
+                  <h3 className="font-semibold">Instructions:</h3>
+                  <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                    <li>Do not switch tabs during the exam.</li>
+                    <li>Ensure your internet connection is stable.</li>
+                    <li>Cheating may result in disqualification.</li>
+                    <li>Submit answers before the timer ends.</li>
+                    <li>Read each question carefully before answering.</li>
+                  </ul>
+                </div>
+              )}
             </CardContent>
             <CardFooter>
               <Button className="w-full" asChild>
-                <Link href={`/dashboard/exams/${exam.id}/take`}>Start Exam</Link>
+                <Link href={`/dashboard/exams/${exam._id}/take`}>
+                  Start Exam
+                </Link>
               </Button>
             </CardFooter>
           </Card>
         </div>
       </div>
     </div>
-  )
+  );
 }

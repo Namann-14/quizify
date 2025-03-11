@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { AlertCircle, ArrowLeft, ArrowRight, Clock, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,33 +17,62 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import axios from "axios";
 
-export default function TakeExamPage({ params }) {
+export default function TakeExamPage() {
+  const params = useParams();
+  const examId = params.id;
+  
   const router = useRouter();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [markedQuestions, setMarkedQuestions] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(120 * 60); // 120 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(0);
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isTimeWarningVisible, setIsTimeWarningVisible] = useState(false);
   const [isTabSwitchWarningVisible, setIsTabSwitchWarningVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // State for API data
+  const [exam, setExam] = useState(null);
+  const [questionData, setQuestionData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock exam data
-  const exam = {
-    id: Number.parseInt(params.id),
-    title: "Advanced Mathematics",
-    totalQuestions: 10,
-    questions: Array.from({ length: 10 }, (_, i) => ({
-      id: i,
-      text: `Question ${i + 1}: Solve the following mathematical problem.`,
-      options: [
-        { id: `${i}-a`, text: "Option A" },
-        { id: `${i}-b`, text: "Option B" },
-        { id: `${i}-c`, text: "Option C" },
-        { id: `${i}-d`, text: "Option D" },
-      ],
-    })),
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        // Fetch exam details using examId from useParams
+        const examResponse = await axios.get(`/api/exam/${examId}`);
+        
+        if (!examResponse.data.success) {
+          throw new Error("Failed to load exam");
+        }
+        
+        // Fetch exam questions
+        const questionsResponse = await axios.get(`/api/exam/question?examId=${examId}`);
+        
+        if (!questionsResponse.data.success || !questionsResponse.data.questions?.length) {
+          throw new Error("No questions found for this exam");
+        }
+        
+        setExam(examResponse.data.exam);
+        setQuestionData(questionsResponse.data);
+        setTimeLeft(examResponse.data.exam.duration * 60); // Convert minutes to seconds
+        
+      } catch (error) {
+        console.error("Error fetching exam data:", error);
+        setError(error.message || "Failed to load exam data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (examId) {
+      fetchData();
+    }
+  }, [examId]);
 
   // Format time as MM:SS
   const formatTime = (seconds) => {
@@ -54,6 +83,8 @@ export default function TakeExamPage({ params }) {
 
   // Handle timer
   useEffect(() => {
+    if (!exam || timeLeft <= 0) return;
+    
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 0) {
@@ -73,7 +104,7 @@ export default function TakeExamPage({ params }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [exam, timeLeft]);
 
   // Handle tab visibility change
   useEffect(() => {
@@ -115,7 +146,8 @@ export default function TakeExamPage({ params }) {
 
   // Navigate to next question
   const handleNextQuestion = () => {
-    if (currentQuestion < exam.totalQuestions - 1) {
+    if (!questionData) return;
+    if (currentQuestion < questionData.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
@@ -142,17 +174,96 @@ export default function TakeExamPage({ params }) {
   };
 
   // Submit exam
-  const handleSubmitExam = () => {
-    // In a real app, you would send the answers to the server
-    router.push(`/dashboard/exams/${params.id}/results`);
+  const handleSubmitExam = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      // Format the answers for submission
+      const formattedAnswers = {};
+      const questions = questionData.questions;
+      
+      // For each question, check if user answered it and format the answer
+      questions.forEach((question, index) => {
+        // If user answered this question
+        if (answers[index] !== undefined) {
+          formattedAnswers[index] = {
+            questionId: index, // Use question index as identifier
+            selectedOption: parseInt(answers[index]), // Convert string to number
+            questionText: question.text // Include question text for reference
+          };
+        }
+      });
+      
+      // Submit to backend API
+      const response = await axios.post('/api/exam/submit', {
+        examId: examId,
+        answers: formattedAnswers,
+        timeSpent: exam.duration * 60 - timeLeft, // Time spent in seconds
+        totalQuestions: questions.length
+      });
+      
+      if (response.data.success) {
+        // Store results in local storage to be accessed on results page
+        sessionStorage.setItem(`exam-${examId}-results`, JSON.stringify(response.data));
+        
+        // Navigate to results page
+        router.push(`/dashboard/exams/${examId}/results`);
+      } else {
+        throw new Error(response.data.message || "Failed to submit exam");
+      }
+    } catch (error) {
+      console.error("Error submitting exam:", error);
+      alert("Failed to submit exam. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+      setIsSubmitDialogOpen(false);
+    }
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="text-center">
+          <Clock className="mx-auto h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-lg font-medium">Loading exam...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error || !exam || !questionData) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" /> Error
+            </CardTitle>
+            <CardDescription>Failed to load exam</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>{error || "This exam may not exist or has no questions."}</p>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => router.push('/dashboard/exams')}>
+              Back to Exams
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   // Calculate progress
+  const questions = questionData.questions;
+  const totalQuestions = questions.length;
   const answeredQuestions = Object.keys(answers).length;
-  const progress = (answeredQuestions / exam.totalQuestions) * 100;
+  const progress = (answeredQuestions / totalQuestions) * 100;
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col">
+    <div className="flex flex-col">
       {/* Header with timer and progress */}
       <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background p-4">
         <div className="flex items-center gap-4">
@@ -160,7 +271,7 @@ export default function TakeExamPage({ params }) {
           <div className="hidden md:block">
             <Progress value={progress} className="h-2 w-[200px]" />
             <p className="text-xs text-muted-foreground">
-              {answeredQuestions} of {exam.totalQuestions} questions answered
+              {answeredQuestions} of {totalQuestions} questions answered
             </p>
           </div>
         </div>
@@ -182,7 +293,7 @@ export default function TakeExamPage({ params }) {
           <div className="p-4">
             <h2 className="mb-2 font-medium">Questions</h2>
             <div className="grid grid-cols-5 gap-2 md:grid-cols-3">
-              {exam.questions.map((_, index) => (
+              {Array.from({ length: totalQuestions }, (_, index) => (
                 <Button
                   key={index}
                   variant={currentQuestion === index ? "default" : answers[index] ? "outline" : "ghost"}
@@ -226,12 +337,12 @@ export default function TakeExamPage({ params }) {
               <CardDescription>{markedQuestions.includes(currentQuestion) ? "Marked for review" : ""}</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="mb-4">{exam.questions[currentQuestion].text}</p>
+              <p className="mb-4">{questions[currentQuestion].text}</p>
               <RadioGroup value={answers[currentQuestion] || ""} onValueChange={handleAnswerSelect}>
-                {exam.questions[currentQuestion].options.map((option) => (
-                  <div key={option.id} className="flex items-center space-x-2 mb-2">
-                    <RadioGroupItem value={option.id} id={option.id} />
-                    <Label htmlFor={option.id}>{option.text}</Label>
+                {questions[currentQuestion].options.map((option, idx) => (
+                  <div key={idx} className="flex items-center space-x-2 mb-2">
+                    <RadioGroupItem value={idx.toString()} id={`question-${currentQuestion}-option-${idx}`} />
+                    <Label htmlFor={`question-${currentQuestion}-option-${idx}`}>{option.text}</Label>
                   </div>
                 ))}
               </RadioGroup>
@@ -244,7 +355,7 @@ export default function TakeExamPage({ params }) {
                 <Button
                   variant="outline"
                   onClick={handleNextQuestion}
-                  disabled={currentQuestion === exam.totalQuestions - 1}
+                  disabled={currentQuestion === totalQuestions - 1}
                 >
                   Next <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -271,7 +382,7 @@ export default function TakeExamPage({ params }) {
             <Button
               variant="outline"
               onClick={handleNextQuestion}
-              disabled={currentQuestion === exam.totalQuestions - 1}
+              disabled={currentQuestion === totalQuestions - 1}
               className="md:hidden"
             >
               Next <ArrowRight className="ml-2 h-4 w-4" />
@@ -292,17 +403,26 @@ export default function TakeExamPage({ params }) {
           <div className="py-4">
             <p className="mb-2 text-sm font-medium">Exam Summary:</p>
             <ul className="space-y-1 text-sm">
-              <li>Total Questions: {exam.totalQuestions}</li>
+              <li>Total Questions: {totalQuestions}</li>
               <li>Answered: {answeredQuestions}</li>
-              <li>Unanswered: {exam.totalQuestions - answeredQuestions}</li>
+              <li>Unanswered: {totalQuestions - answeredQuestions}</li>
               <li>Marked for Review: {markedQuestions.length}</li>
             </ul>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSubmitDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsSubmitDialogOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleSubmitExam}>Submit Exam</Button>
+            <Button onClick={handleSubmitExam} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Clock className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Exam"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

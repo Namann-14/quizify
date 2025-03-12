@@ -30,14 +30,20 @@ const examQuestionsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Exam",
       required: [true, "Exam ID is required"],
-      unique: true, // One document per exam
+      // Remove unique constraint to allow multiple questions per exam
     },
-    questions: [questionItemSchema],
+    questionText: {
+      type: String,
+      required: [true, "Question text is required"],
+      trim: true,
+    },
+    options: [optionSchema],
   },
   { timestamps: true }
 );
 
-// Create an index for efficient lookup
+// Only define the index once - remove duplicate index definition
+// No need for unique constraint
 examQuestionsSchema.index({ examId: 1 });
 
 const ExamQuestionsModel =

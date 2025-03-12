@@ -4,7 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { AlertCircle, ArrowLeft, ArrowRight, Clock, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -22,7 +29,7 @@ import axios from "axios";
 export default function TakeExamPage() {
   const params = useParams();
   const examId = params.id;
-  
+
   const router = useRouter();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -30,9 +37,10 @@ export default function TakeExamPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isTimeWarningVisible, setIsTimeWarningVisible] = useState(false);
-  const [isTabSwitchWarningVisible, setIsTabSwitchWarningVisible] = useState(false);
+  const [isTabSwitchWarningVisible, setIsTabSwitchWarningVisible] =
+    useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // State for API data
   const [exam, setExam] = useState(null);
   const [questionData, setQuestionData] = useState(null);
@@ -45,22 +53,26 @@ export default function TakeExamPage() {
         setIsLoading(true);
         // Fetch exam details using examId from useParams
         const examResponse = await axios.get(`/api/exam/${examId}`);
-        
+
         if (!examResponse.data.success) {
           throw new Error("Failed to load exam");
         }
-        
+
         // Fetch exam questions
-        const questionsResponse = await axios.get(`/api/exam/question?examId=${examId}`);
-        
-        if (!questionsResponse.data.success || !questionsResponse.data.questions?.length) {
+        const questionsResponse = await axios.get(
+          `/api/exam/question?examId=${examId}`
+        );
+
+        if (
+          !questionsResponse.data.success ||
+          !questionsResponse.data.questions?.length
+        ) {
           throw new Error("No questions found for this exam");
         }
-        
+
         setExam(examResponse.data.exam);
         setQuestionData(questionsResponse.data);
         setTimeLeft(examResponse.data.exam.duration * 60); // Convert minutes to seconds
-        
       } catch (error) {
         console.error("Error fetching exam data:", error);
         setError(error.message || "Failed to load exam data");
@@ -68,7 +80,7 @@ export default function TakeExamPage() {
         setIsLoading(false);
       }
     };
-    
+
     if (examId) {
       fetchData();
     }
@@ -78,13 +90,15 @@ export default function TakeExamPage() {
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   // Handle timer
   useEffect(() => {
     if (!exam || timeLeft <= 0) return;
-    
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 0) {
@@ -174,14 +188,15 @@ export default function TakeExamPage() {
   };
 
   // Submit exam
+  // Frontend code for submitting exam
   const handleSubmitExam = async () => {
     try {
       setIsSubmitting(true);
-      
+
       // Format the answers for submission
       const formattedAnswers = {};
       const questions = questionData.questions;
-      
+
       // For each question, check if user answered it and format the answer
       questions.forEach((question, index) => {
         // If user answered this question
@@ -189,25 +204,30 @@ export default function TakeExamPage() {
           formattedAnswers[index] = {
             questionId: index, // Use question index as identifier
             selectedOption: parseInt(answers[index]), // Convert string to number
-            questionText: question.text // Include question text for reference
+            questionText: question.text, // Include question text for reference
           };
         }
       });
-      
+
       // Submit to backend API
-      const response = await axios.post('/api/exam/submit', {
+      const response = await axios.post("/api/exam/submit", {
         examId: examId,
         answers: formattedAnswers,
         timeSpent: exam.duration * 60 - timeLeft, // Time spent in seconds
-        totalQuestions: questions.length
+        totalQuestions: questions.length,
       });
-      
+
       if (response.data.success) {
         // Store results in local storage to be accessed on results page
-        sessionStorage.setItem(`exam-${examId}-results`, JSON.stringify(response.data));
-        
+        sessionStorage.setItem(
+          `exam-${examId}-results`,
+          JSON.stringify(response.data)
+        );
+
         // Navigate to results page
-        router.push(`/dashboard/exams/${examId}/results`);
+        router.push(
+          `/dashboard/exams/${examId}/results?resultId=${response.data.resultId}`
+        );
       } else {
         throw new Error(response.data.message || "Failed to submit exam");
       }
@@ -247,7 +267,7 @@ export default function TakeExamPage() {
             <p>{error || "This exam may not exist or has no questions."}</p>
           </CardContent>
           <CardFooter>
-            <Button onClick={() => router.push('/dashboard/exams')}>
+            <Button onClick={() => router.push("/dashboard/exams")}>
               Back to Exams
             </Button>
           </CardFooter>
@@ -278,11 +298,17 @@ export default function TakeExamPage() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className={`font-mono ${timeLeft < 300 ? "text-red-500 font-bold" : ""}`}>
+            <span
+              className={`font-mono ${
+                timeLeft < 300 ? "text-red-500 font-bold" : ""
+              }`}
+            >
               {formatTime(timeLeft)}
             </span>
           </div>
-          <Button onClick={() => setIsSubmitDialogOpen(true)}>Submit Exam</Button>
+          <Button onClick={() => setIsSubmitDialogOpen(true)}>
+            Submit Exam
+          </Button>
         </div>
       </div>
 
@@ -296,9 +322,19 @@ export default function TakeExamPage() {
               {Array.from({ length: totalQuestions }, (_, index) => (
                 <Button
                   key={index}
-                  variant={currentQuestion === index ? "default" : answers[index] ? "outline" : "ghost"}
+                  variant={
+                    currentQuestion === index
+                      ? "default"
+                      : answers[index]
+                      ? "outline"
+                      : "ghost"
+                  }
                   size="sm"
-                  className={`relative ${markedQuestions.includes(index) ? "ring-2 ring-yellow-500" : ""}`}
+                  className={`relative ${
+                    markedQuestions.includes(index)
+                      ? "ring-2 ring-yellow-500"
+                      : ""
+                  }`}
                   onClick={() => handleQuestionClick(index)}
                 >
                   {index + 1}
@@ -317,7 +353,9 @@ export default function TakeExamPage() {
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Time Warning</AlertTitle>
-              <AlertDescription>You have 5 minutes remaining. Please finish your exam.</AlertDescription>
+              <AlertDescription>
+                You have 5 minutes remaining. Please finish your exam.
+              </AlertDescription>
             </Alert>
           )}
 
@@ -326,7 +364,8 @@ export default function TakeExamPage() {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Warning</AlertTitle>
               <AlertDescription>
-                Tab switching detected. This activity is logged and may be considered cheating.
+                Tab switching detected. This activity is logged and may be
+                considered cheating.
               </AlertDescription>
             </Alert>
           )}
@@ -334,22 +373,40 @@ export default function TakeExamPage() {
           <Card className="mb-4">
             <CardHeader>
               <CardTitle>Question {currentQuestion + 1}</CardTitle>
-              <CardDescription>{markedQuestions.includes(currentQuestion) ? "Marked for review" : ""}</CardDescription>
+              <CardDescription>
+                {markedQuestions.includes(currentQuestion)
+                  ? "Marked for review"
+                  : ""}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="mb-4">{questions[currentQuestion].text}</p>
-              <RadioGroup value={answers[currentQuestion] || ""} onValueChange={handleAnswerSelect}>
+              <RadioGroup
+                value={answers[currentQuestion] || ""}
+                onValueChange={handleAnswerSelect}
+              >
                 {questions[currentQuestion].options.map((option, idx) => (
                   <div key={idx} className="flex items-center space-x-2 mb-2">
-                    <RadioGroupItem value={idx.toString()} id={`question-${currentQuestion}-option-${idx}`} />
-                    <Label htmlFor={`question-${currentQuestion}-option-${idx}`}>{option.text}</Label>
+                    <RadioGroupItem
+                      value={idx.toString()}
+                      id={`question-${currentQuestion}-option-${idx}`}
+                    />
+                    <Label
+                      htmlFor={`question-${currentQuestion}-option-${idx}`}
+                    >
+                      {option.text}
+                    </Label>
                   </div>
                 ))}
               </RadioGroup>
             </CardContent>
             <CardFooter className="flex justify-between">
               <div className="flex gap-2">
-                <Button variant="outline" onClick={handlePrevQuestion} disabled={currentQuestion === 0}>
+                <Button
+                  variant="outline"
+                  onClick={handlePrevQuestion}
+                  disabled={currentQuestion === 0}
+                >
                   <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
                 <Button
@@ -361,11 +418,17 @@ export default function TakeExamPage() {
                 </Button>
               </div>
               <Button
-                variant={markedQuestions.includes(currentQuestion) ? "default" : "outline"}
+                variant={
+                  markedQuestions.includes(currentQuestion)
+                    ? "default"
+                    : "outline"
+                }
                 onClick={handleMarkQuestion}
               >
                 <Flag className="mr-2 h-4 w-4" />
-                {markedQuestions.includes(currentQuestion) ? "Unmark" : "Mark for Review"}
+                {markedQuestions.includes(currentQuestion)
+                  ? "Unmark"
+                  : "Mark for Review"}
               </Button>
             </CardFooter>
           </Card>
@@ -397,7 +460,8 @@ export default function TakeExamPage() {
           <DialogHeader>
             <DialogTitle>Submit Exam</DialogTitle>
             <DialogDescription>
-              Are you sure you want to submit your exam? You cannot return to the exam after submission.
+              Are you sure you want to submit your exam? You cannot return to
+              the exam after submission.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -410,7 +474,11 @@ export default function TakeExamPage() {
             </ul>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSubmitDialogOpen(false)} disabled={isSubmitting}>
+            <Button
+              variant="outline"
+              onClick={() => setIsSubmitDialogOpen(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button onClick={handleSubmitExam} disabled={isSubmitting}>

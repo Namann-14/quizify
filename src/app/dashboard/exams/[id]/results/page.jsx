@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,46 +20,75 @@ import {
   Pie,
   Cell,
 } from "@/components/ui/chart";
-
+import { Skeleton } from "@/components/ui/skeleton";
+import { useParams } from "next/navigation";
 export default function ExamResultsPage({ params }) {
   const [activeTab, setActiveTab] = useState("summary");
+  const [examResult, setExamResult] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const router = useRouter();
+  const param = useParams();
+  const paramsID = param.id;
 
-  // Mock exam result data
-  const examResult = {
-    id: Number.parseInt(params.id),
-    title: "Advanced Mathematics",
-    date: "2025-03-15T10:00:00",
-    duration: 120,
-    score: 85,
-    passingScore: 70,
-    totalQuestions: 50,
-    correctAnswers: 42,
-    incorrectAnswers: 8,
-    skippedQuestions: 0,
-    timeTaken: 105, // minutes
-    passed: true,
-    categoryScores: [
-      { name: "Calculus", score: 90 },
-      { name: "Linear Algebra", score: 80 },
-      { name: "Differential Equations", score: 85 },
-      { name: "Complex Analysis", score: 75 },
-      { name: "Numerical Methods", score: 95 },
-    ],
-    questions: Array.from({ length: 10 }, (_, i) => ({
-      id: i,
-      text: `Question ${i + 1}: Solve the following mathematical problem.`,
-      userAnswer: i < 8 ? `${i}-a` : `${i}-c`,
-      correctAnswer: i < 8 ? `${i}-a` : `${i}-b`,
-      isCorrect: i < 8,
-      explanation:
-        "The correct approach is to apply the chain rule for differentiation and then solve for the variable.",
-    })),
-  };
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        setLoading(true);
+        // Fetch data using the examId from paramsID
+        const response = await fetch(`/api/exam/result?examId=${paramsID}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to fetch result");
+        }
+        
+        const data = await response.json();
+        setExamResult(data.result);
+      } catch (err) {
+        console.error("Error fetching results:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Calculate percentages
-  const correctPercentage = (examResult.correctAnswers / examResult.totalQuestions) * 100;
-  const incorrectPercentage = (examResult.incorrectAnswers / examResult.totalQuestions) * 100;
-  const skippedPercentage = (examResult.skippedQuestions / examResult.totalQuestions) * 100;
+    fetchResults();
+  }, [paramsID]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="h-4 w-1/4" />
+        </div>
+        <Skeleton className="h-[300px] w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 py-12">
+        <h2 className="text-2xl font-bold text-red-600">Error Loading Results</h2>
+        <p>{error}</p>
+        <Button onClick={() => router.back()}>Go Back</Button>
+      </div>
+    );
+  }
+
+  if (!examResult) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 py-12">
+        <h2 className="text-2xl font-bold">No Results Found</h2>
+        <p>We couldn't find any results for this exam.</p>
+        <Button asChild>
+          <Link href="/dashboard/exams">Back to Exams</Link>
+        </Button>
+      </div>
+    );
+  }
 
   // Data for pie chart
   const pieData = [
@@ -124,7 +154,7 @@ export default function ExamResultsPage({ params }) {
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Time Taken</p>
-              <p className="text-2xl font-bold">{examResult.timeTaken} min</p>
+              <p className="text-2xl font-bold">{examResult.timeTaken}</p>
             </div>
           </div>
 
@@ -139,7 +169,7 @@ export default function ExamResultsPage({ params }) {
                   examResult.passed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                 }`}
               >
-                {examResult.passed ? "PASSED" : "FAILED"}
+                {examResult.status}
               </div>
             </div>
           </div>
@@ -149,7 +179,6 @@ export default function ExamResultsPage({ params }) {
       <Tabs defaultValue="summary" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="summary">Performance Summary</TabsTrigger>
-          <TabsTrigger value="questions">Question Analysis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="space-y-4">
@@ -184,111 +213,42 @@ export default function ExamResultsPage({ params }) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Category Performance</CardTitle>
-                <CardDescription>Your scores by topic</CardDescription>
+                <CardTitle>Score Distribution</CardTitle>
+                <CardDescription>Percentage breakdown</CardDescription>
               </CardHeader>
-              <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={examResult.categoryScores}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="score" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-sm font-medium">Correct</span>
+                    <span className="text-sm font-medium">{examResult.scoreDistribution.correctPercentage}%</span>
+                  </div>
+                  <Progress value={examResult.scoreDistribution.correctPercentage} className="h-2 bg-slate-200">
+                    <div className="h-full bg-green-600" style={{width: `${examResult.scoreDistribution.correctPercentage}%`}} />
+                  </Progress>
+                </div>
+                
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-sm font-medium">Incorrect</span>
+                    <span className="text-sm font-medium">{examResult.scoreDistribution.incorrectPercentage}%</span>
+                  </div>
+                  <Progress value={examResult.scoreDistribution.incorrectPercentage} className="h-2 bg-slate-200">
+                    <div className="h-full bg-red-600" style={{width: `${examResult.scoreDistribution.incorrectPercentage}%`}} />
+                  </Progress>
+                </div>
+                
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-sm font-medium">Skipped</span>
+                    <span className="text-sm font-medium">{examResult.scoreDistribution.skippedPercentage}%</span>
+                  </div>
+                  <Progress value={examResult.scoreDistribution.skippedPercentage} className="h-2 bg-slate-200">
+                    <div className="h-full bg-amber-500" style={{width: `${examResult.scoreDistribution.skippedPercentage}%`}} />
+                  </Progress>
+                </div>
               </CardContent>
             </Card>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Insights</CardTitle>
-              <CardDescription>Analysis of your exam performance</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-medium">Strengths</h3>
-                <ul className="list-disc pl-5 text-sm">
-                  <li>Excellent performance in Numerical Methods (95%)</li>
-                  <li>Strong understanding of Calculus concepts (90%)</li>
-                  <li>Good time management - completed the exam in 105 minutes (out of 120)</li>
-                </ul>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-medium">Areas for Improvement</h3>
-                <ul className="list-disc pl-5 text-sm">
-                  <li>Complex Analysis needs more attention (75%)</li>
-                  <li>Review Linear Algebra concepts (80%)</li>
-                </ul>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-medium">Recommendations</h3>
-                <ul className="list-disc pl-5 text-sm">
-                  <li>Focus on strengthening Complex Analysis understanding</li>
-                  <li>Practice more Linear Algebra problems</li>
-                  <li>Consider taking advanced courses in Numerical Methods</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="questions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Question Analysis</CardTitle>
-              <CardDescription>Detailed breakdown of your answers</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {examResult.questions.map((question) => (
-                  <div key={question.id} className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <div
-                        className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full ${
-                          question.isCorrect ? "bg-green-100" : "bg-red-100"
-                        }`}
-                      >
-                        {question.isCorrect ? (
-                          <Check className="h-3 w-3 text-green-600" />
-                        ) : (
-                          <X className="h-3 w-3 text-red-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{question.text}</p>
-                        <div className="mt-2 space-y-1 text-sm">
-                          <p>
-                            <span className="font-medium">Your Answer:</span>{" "}
-                            <span className={question.isCorrect ? "text-green-600" : "text-red-600"}>
-                              {question.userAnswer.split("-")[1].toUpperCase()}
-                            </span>
-                          </p>
-                          {!question.isCorrect && (
-                            <p>
-                              <span className="font-medium">Correct Answer:</span>{" "}
-                              <span className="text-green-600">
-                                {question.correctAnswer.split("-")[1].toUpperCase()}
-                              </span>
-                            </p>
-                          )}
-                        </div>
-                        {!question.isCorrect && (
-                          <div className="mt-2 rounded-md bg-muted p-2 text-sm">
-                            <p className="font-medium">Explanation:</p>
-                            <p className="text-muted-foreground">{question.explanation}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

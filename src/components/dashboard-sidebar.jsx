@@ -98,27 +98,14 @@ export function DashboardSidebar({ children }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Admin only menu items */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive("/dashboard/question-bank")}
-                >
-                  <Link href="/dashboard/question-bank">
-                    <BookOpen className="h-4 w-4" />
-                    <span>Question Bank</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   isActive={isActive("/dashboard/users")}
                 >
-                  <Link href="/dashboard/users">
+                  <Link href="/dashboard/ai-test">
                     <Users className="h-4 w-4" />
-                    <span>Users</span>
+                    <span>AI Practice Test</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

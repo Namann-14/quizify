@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { Toaster } from "sonner"; // Import Sonner Toaster
+import { Toaster } from "sonner";
 
 export default function AdminLayout({ children }) {
   const { data: session, status } = useSession();
@@ -16,8 +16,8 @@ export default function AdminLayout({ children }) {
     );
   }
 
-  // Check if user is authenticated and has admin role
-  if (status === "unauthenticated" || !session?.user?.role === "admin") {
+  // Fixed condition to properly check for admin access
+  if (status === "unauthenticated" || session?.user?.accountType !== "admin") {
     redirect("/login?callbackUrl=/admin");
   }
 
@@ -57,7 +57,6 @@ export default function AdminLayout({ children }) {
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
       
-      {/* Add Sonner Toaster component */}
       <Toaster position="top-right" richColors closeButton />
     </div>
   );

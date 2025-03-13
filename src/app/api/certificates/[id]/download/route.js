@@ -17,8 +17,8 @@ export async function GET(request, { params }) {
         { status: 401 }
       );
     }
-
-    const certificateId = params.id;
+    const params2 = await params;
+    const certificateId = params2.id;
     
     // Find the specific exam result
     const result = await ExamResultModel.findById(certificateId).lean();

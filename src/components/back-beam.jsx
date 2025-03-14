@@ -31,7 +31,7 @@ export function BackgroundBeamsDemo() {
   };
 
   return (
-    <div className="h-[40rem] w-full rounded-md bg-background text-foreground dark:bg-neutral-950 relative flex flex-col items-center justify-center antialiased">
+    <div className="h-fit w-full rounded-md bg-background text-foreground dark:bg-neutral-950 relative flex flex-col items-center justify-center antialiased">
       <section id="how-it-works" className="w-full py-12 md:py-24 lg:py-32 relative z-10">
         <div className="px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">

@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+![image](https://github.com/user-attachments/assets/075ba3ae-545c-4698-9737-48db71b31987)
 
-## Getting Started
+A comprehensive online testing platform with secure exams, auto-grading, and instant certification.
 
-First, run the development server:
+## 📝 About
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Quizify is a modern online testing platform that enables secure exam administration, automatic grading, and instant certification. Our platform simplifies the entire testing process from creation to certification.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Features
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- **🔒 Secure Exam Environment** - Anti-cheating measures including tab-switching detection
+- **⏱️ Timed Exams** - Set time limits with automatic submission when time expires
+- **🔀 Randomized Questions** - Prevent cheating with randomized question order
+- **📊 Performance Analytics** - Detailed insights and reports on exam performance
+- **📜 Certificate Generation** - Automatic PDF certificate generation upon passing
+- **🧮 Auto-Grading** - Instant evaluation of objective questions
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Tech Stack
 
-## Learn More
+- **Frontend**: Next.js 15, React, TailwindCSS, Framer Motion
+- **Backend**: Next.js API Routes
+- **Database**: MongoDB
+- **Authentication**: NextAuth.js
+- **Styling**: Tailwind CSS, Aceternity UI
+- **Media Storage**: Cloudinary
 
-To learn more about Next.js, take a look at the following resources:
+## 🚦 Getting Started
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Prerequisites
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Node.js 18+ and npm/yarn
+- MongoDB database
+- GitHub OAuth credentials (for authentication)
+- Cloudinary account (for image uploads)
 
-## Deploy on Vercel
+### Installation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/quizify.git
+   cd quizify
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+3. Create a .env.local file in the root directory with the following variables:
+   ```bash
+   NEXTAUTH_URL=http://localhost:3000
+   AUTH_SECRET="your-secret-key"
+   GITHUB_ID="your-github-oauth-id"
+   GITHUB_SECRET="your-github-oauth-secret"
+   MONGODB_URI=your-mongodb-connection-string
+   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloudinary-name
+   CLOUDINARY_API_KEY=your-cloudinary-key
+   CLOUDINARY_API_SECRET=your-cloudinary-secret
+   ```
+4. Run the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+5. Open http://localhost:3000 in your browser
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# ⚠️ Important Authentication Note
+
+GitHub Authentication only works properly on localhost.
+
+When deploying to Vercel or other hosting platforms, you'll need to:
+
+Update the GitHub OAuth callback URL in your GitHub Developer settings
+Set the appropriate NEXTAUTH_URL in your environment variables
+For local testing, make sure your GitHub OAuth app has the callback URL set to:
+http://localhost:3000/api/auth/callback/github
+# 💻 Usage
+Admin Dashboard
+Create and manage exams
+Review student performances
+Generate reports
+Student Experience
+Sign in to your account
+Browse available exams
+Take timed assessments
+Get instant feedback and certificates
+# 🌐 Deployment
+This app can be easily deployed on Vercel:
+
+<img alt="Deploy with Vercel" src="https://vercel.com/button">
+Remember to configure the required environment variables on your deployment platform.
+
+# 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.

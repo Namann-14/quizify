@@ -24,7 +24,7 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -33,14 +33,18 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGithubLoading, setIsGithubLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   // Show success message if user just registered
   const registered = searchParams.get("registered");
 
   // Redirect authenticated users to the dashboard
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/dashboard");
+      if (session?.user?.accountType === "student") {
+        router.push("/dashboard");
+      } else {
+        router.push("/admin");
+      }
     }
   }, [status, router]);
 
@@ -61,30 +65,32 @@ export default function LoginPage() {
 
   const handleCredentialLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
       setError("Please enter both email and password");
       return;
     }
-    
+
     try {
       setIsLoading(true);
       setError("");
-      
+
       const result = await signIn("credentials", {
         redirect: false,
         email: formData.email,
         password: formData.password,
         accountType: formData.accountType,
       });
-      
+
       if (result?.error) {
-        setError(result.error === "CredentialsSignin" 
-          ? "Invalid email or password" 
-          : result.error);
+        setError(
+          result.error === "CredentialsSignin"
+            ? "Invalid email or password"
+            : result.error
+        );
         return;
       }
-      
+
       // Successful login - redirection is handled by useEffect
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -112,7 +118,7 @@ export default function LoginPage() {
         <form onSubmit={handleCredentialLogin}>
           <CardHeader className="space-y-1">
             <div className="flex justify-center">
-              <div className="flex items-center gap-2 font-bold text-xl">
+              <div className="flex items-center gap-2 font-bold text-3xl">
                 Quizify
               </div>
             </div>
@@ -123,7 +129,7 @@ export default function LoginPage() {
               Enter your email and password to access your account
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 mt-2">
             {registered && (
               <Alert className="bg-green-50 border-green-200">
                 <AlertDescription className="text-green-800">
@@ -131,7 +137,7 @@ export default function LoginPage() {
                 </AlertDescription>
               </Alert>
             )}
-            
+
             {error && (
               <Alert className="bg-destructive/15 border-destructive/50">
                 <AlertDescription className="text-destructive">
@@ -139,36 +145,36 @@ export default function LoginPage() {
                 </AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="m@example.com" 
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
                 value={formData.email}
                 onChange={handleInputChange}
-                required 
+                required
               />
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
               </div>
-              <Input 
-                id="password" 
-                type="password" 
+              <Input
+                id="password"
+                type="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                required 
+                required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Account Type</Label>
-              <RadioGroup 
-                defaultValue="student" 
+              <RadioGroup
+                defaultValue="student"
                 value={formData.accountType}
                 onValueChange={handleRadioChange}
               >
@@ -182,15 +188,11 @@ export default function LoginPage() {
                 </div>
               </RadioGroup>
             </div>
-            
-            <Button 
-              className="w-full" 
-              type="submit"
-              disabled={isLoading}
-            >
+
+            <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Login"}
             </Button>
-            
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t"></span>
@@ -199,7 +201,7 @@ export default function LoginPage() {
                 <span className="bg-card px-2 text-muted-foreground">Or</span>
               </div>
             </div>
-            
+
             <Button
               type="button"
               variant="outline"
@@ -220,7 +222,7 @@ export default function LoginPage() {
               )}
             </Button>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 mt-2">
             <div className="text-center text-sm">
               Don't have an account?{" "}
               <Link href="/signup" className="text-primary hover:underline">

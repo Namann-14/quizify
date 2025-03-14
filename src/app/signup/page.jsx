@@ -155,7 +155,7 @@ const handleSubmit = async (e) => {
         <form onSubmit={handleSubmit}>
           <CardHeader className="space-y-1">
             <div className="flex justify-center">
-              <div className="flex items-center gap-2 font-bold text-xl">
+              <div className="flex items-center gap-2 font-bold text-4xl">
                 Quizify
               </div>
             </div>
@@ -258,40 +258,6 @@ const handleSubmit = async (e) => {
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password}</p>
               )}
-            </div>
-            <div className="space-y-2">
-              <Label>Profile Image (optional)</Label>
-              <div className="mt-1">
-                <CldUploadWidget
-                  uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "quizify_uploads"}
-                  onSuccess={handleImageUploadSuccess}
-                >
-                  {({ open }) => (
-                    <div>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={() => open()}
-                      >
-                        {formData.avatarUrl ? 'Change Image' : 'Upload Image'}
-                      </Button>
-                      
-                      {formData.avatarUrl && (
-                        <div className="mt-2">
-                          <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden">
-                            <img 
-                              src={formData.avatarUrl} 
-                              alt="Profile preview" 
-                              className="object-cover w-full h-full"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CldUploadWidget>
-              </div>
             </div>
             <div className="space-y-2">
               <Label>Account Type</Label>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Toaster } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLayout({ children }) {
   const { data: session, status } = useSession();
@@ -52,11 +53,12 @@ export default function AdminLayout({ children }) {
                 </ul>
               </div>
             </nav>
+            <Button className="rounded-1 mx-2 mb-1" onClick={()=> signOut()}>Sign out</Button>
           </div>
         </aside>
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
-      
+
       <Toaster position="top-right" richColors closeButton />
     </div>
   );

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ThemeToggler } from "./theme-toggler";
@@ -16,14 +16,32 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { LogOut } from "lucide-react";
 import Link from "next/link";
+import { Slack } from "lucide-react";
 
 const Navbar = () => {
   const { data: session } = useSession();
+  const [scrolled, setScrolled] = useState(false);
+
+  // Add scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    // Check initial scroll position
+    handleScroll();
+
+    // Clean up
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <motion.header
       className={cn(
-        "h-16 flex justify-between items-center px-6 md:px-10 lg:px-40 sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg"
+        "h-18 flex justify-between items-center px-6 md:px-10 lg:px-12 sticky top-5 z-50 sm:w-full md:w-3/4 bg-background/5 backdrop-blur-lg mx-auto rounded-2xl mt-2 transition-all duration-300 ease-in-out",
+        scrolled ? "shadow-2xl border-1" : "shadow-none"
       )}
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -35,7 +53,9 @@ const Navbar = () => {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="text-xl font-semibold tracking-wide"
       >
-        <div className="p-1 rounded-lg border-2 border-black font-bold dark:border-white text-xl ">Quizify</div>
+        <div className="flex items-center gap-1 p-1 rounded-lg border-2 border-black font-bold dark:border-white text-xl ">
+          Quizify <Slack />
+        </div>
       </motion.div>
 
       {/* Right Section */}
@@ -59,12 +79,16 @@ const Navbar = () => {
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
-                <DropdownMenuLabel className="ml-2 font-medium py-1">My Account</DropdownMenuLabel>
+                <DropdownMenuLabel className="ml-2 font-medium py-1">
+                  My Account
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <div className="flex items-center gap-2 ml-2 pt-2">
                   <div className="flex flex-col space-y-1 leading-0">
                     {session.user.name && (
-                      <span className="font-semibold mb-2">{session.user.name}</span>
+                      <span className="font-semibold mb-2">
+                        {session.user.name}
+                      </span>
                     )}
                     {session.user.email && (
                       <span className="text-sm text-foreground/60">
@@ -82,9 +106,7 @@ const Navbar = () => {
           </div>
         ) : (
           <Link href="/login">
-          <Button variant="outline">
-            Sign In
-          </Button>
+            <Button variant="outline">Sign In</Button>
           </Link>
         )}
       </motion.div>

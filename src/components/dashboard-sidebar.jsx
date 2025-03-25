@@ -10,6 +10,7 @@ import {
   FileText,
   Home,
   LogOut,
+  Slack,
   User,
   Users,
 } from "lucide-react";
@@ -58,8 +59,8 @@ export function DashboardSidebar({ children }) {
         <Sidebar>
           <SidebarHeader className="border-b h-16 flex items-start justify-center">
             <div className="flex items-center gap-2 px-2 font-bold text-xl">
-              <Link href="/" className="w-full">
-                Quizify
+              <Link href="/" className="w-full flex items-center gap-1">
+                Quizify <Slack />
               </Link>
             </div>
           </SidebarHeader>

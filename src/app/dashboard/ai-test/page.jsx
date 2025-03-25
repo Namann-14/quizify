@@ -45,17 +45,29 @@ const AiPracticeQuiz = () => {
     });
   };
 
-  // Handle checkbox changes
+  // Handle checkbox changes - FIXED VERSION
   const handleCheckboxChange = (e) => {
     const { id, checked } = e.target;
-    const questionType = id.replace(/-/g, "");
-    setQuizForm({
-      ...quizForm,
-      questionTypes: {
-        ...quizForm.questionTypes,
-        [questionType]: checked,
-      },
-    });
+    
+    // Map checkbox IDs to state property names
+    const idToProperty = {
+      'multiple-choice': 'multipleChoice',
+      'true-false': 'trueFalse',
+      'short-answer': 'shortAnswer',
+      'fill-blanks': 'fillBlanks'
+    };
+    
+    const propertyName = idToProperty[id];
+    
+    if (propertyName) {
+      setQuizForm({
+        ...quizForm,
+        questionTypes: {
+          ...quizForm.questionTypes,
+          [propertyName]: checked,
+        },
+      });
+    }
   };
 
   // Handle form submission - now with direct navigation

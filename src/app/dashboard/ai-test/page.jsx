@@ -109,7 +109,7 @@ const AiPracticeQuiz = () => {
                     <input
                       id="topic"
                       placeholder="e.g., JavaScript Fundamentals, World History"
-                      className="w-full rounded-md border border-gray-300 p-2 dark:bg-gray-800 dark:border-gray-700"
+                      className="w-full rounded-md border border-gray-300 p-2 dark:bg-white-800 dark:border-gray-700"
                     />
                   </div>
 
@@ -119,12 +119,12 @@ const AiPracticeQuiz = () => {
                     </label>
                     <select
                       id="difficulty"
-                      className="w-full rounded-md border border-gray-300 p-2 dark:bg-gray-800 dark:border-gray-700"
+                      className="w-full rounded-md border border-gray-300 p-2 dark:bg-black-800 dark:border-gray-700"
                     >
-                      <option value="beginner">Beginner</option>
-                      <option value="intermediate">Intermediate</option>
-                      <option value="advanced">Advanced</option>
-                      <option value="expert">Expert</option>
+                      <option className="bg-white dark:bg-black" value="beginner">Beginner</option>
+                      <option className="bg-white dark:bg-black" value="intermediate">Intermediate</option>
+                      <option className="bg-white dark:bg-black" value="advanced">Advanced</option>
+                      <option className="bg-white dark:bg-black" value="expert">Expert</option>
                     </select>
                   </div>
 
@@ -138,7 +138,7 @@ const AiPracticeQuiz = () => {
                       min="5"
                       max="50"
                       defaultValue="10"
-                      className="w-full rounded-md border border-gray-300 p-2 dark:bg-gray-800 dark:border-gray-700"
+                      className="w-full rounded-md border border-gray-300 p-2 dark:bg-black-800 dark:border-gray-700"
                     />
                   </div>
 
@@ -181,7 +181,7 @@ const AiPracticeQuiz = () => {
                       id="instructions"
                       placeholder="Any specific topics to focus on or other instructions..."
                       rows="3"
-                      className="w-full rounded-md border border-gray-300 p-2 dark:bg-gray-800 dark:border-gray-700"
+                      className="w-full rounded-md border border-gray-300 p-2 dark:bg-black-800 dark:border-gray-700"
                     />
                   </div>
                 </div>

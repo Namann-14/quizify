@@ -18,7 +18,7 @@ export default function Home() {
             Quizify <Slack />
           </div>
           <p className="text-center text-sm text-muted-foreground md:text-left">
-            &copy; {new Date().getFullYear()} ExamCert. All rights reserved.
+            &copy; {new Date().getFullYear()} Quizify All rights reserved.
           </p>
           <div className="flex gap-4">
             <Link

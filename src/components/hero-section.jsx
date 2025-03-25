@@ -60,12 +60,11 @@ export default function HeroSection() {
           <Link href="/signup">
             <Button className="mt-8 h-18 w-60 text-2xl relative overflow-hidden group">
               <span className="relative z-10">Get Started</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Button>
           </Link>
         </motion.div>
 
-        <motion.div variants={itemVariants}>
+        <motion.div variants={itemVariants} className="max-w-5xl mx-auto mt-12">
           <TracingBeamDemo />
         </motion.div>
       </motion.div>

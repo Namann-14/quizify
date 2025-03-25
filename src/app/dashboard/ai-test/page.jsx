@@ -1,9 +1,9 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Drawer,
   DrawerContent,
@@ -14,8 +14,88 @@ import {
   DrawerClose,
   DrawerFooter,
 } from "@/components/ui/drawer";
+import { Loader2 } from "lucide-react";
 
 const AiPracticeQuiz = () => {
+  const router = useRouter();
+
+  // Form state
+  const [quizForm, setQuizForm] = useState({
+    topic: "",
+    difficulty: "beginner",
+    numQuestions: 10,
+    questionTypes: {
+      multipleChoice: true,
+      trueFalse: false,
+      shortAnswer: false,
+      fillBlanks: false,
+    },
+    instructions: "",
+  });
+  
+  // Loading state
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setQuizForm({ 
+      ...quizForm, 
+      [id === "questions" ? "numQuestions" : id]: id === "questions" ? parseInt(value) : value 
+    });
+  };
+
+  // Handle checkbox changes
+  const handleCheckboxChange = (e) => {
+    const { id, checked } = e.target;
+    const questionType = id.replace(/-/g, "");
+    setQuizForm({
+      ...quizForm,
+      questionTypes: {
+        ...quizForm.questionTypes,
+        [questionType]: checked,
+      },
+    });
+  };
+
+  // Handle form submission - now with direct navigation
+  const handleGenerateQuiz = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/generate-quiz', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(quizForm),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate quiz');
+      }
+      
+      const generatedQuiz = await response.json();
+      
+      // Generate a unique ID for the quiz
+      const quizId = Date.now().toString();
+      
+      // Save quiz data to localStorage
+      localStorage.setItem(`quiz_${quizId}`, JSON.stringify({
+        ...generatedQuiz,
+        difficulty: quizForm.difficulty,
+      }));
+      
+      // Immediately redirect to the quiz page
+      router.push(`/dashboard/ai-test/quiz/${quizId}`);
+      
+    } catch (error) {
+      console.error('Error generating quiz:', error);
+      alert('Failed to generate quiz. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -110,6 +190,8 @@ const AiPracticeQuiz = () => {
                       id="topic"
                       placeholder="e.g., JavaScript Fundamentals, World History"
                       className="w-full rounded-md border border-gray-300 p-2 dark:bg-white-800 dark:border-gray-700"
+                      value={quizForm.topic}
+                      onChange={handleInputChange}
                     />
                   </div>
 
@@ -120,6 +202,8 @@ const AiPracticeQuiz = () => {
                     <select
                       id="difficulty"
                       className="w-full rounded-md border border-gray-300 p-2 dark:bg-black-800 dark:border-gray-700"
+                      value={quizForm.difficulty}
+                      onChange={handleInputChange}
                     >
                       <option className="bg-white dark:bg-black" value="beginner">Beginner</option>
                       <option className="bg-white dark:bg-black" value="intermediate">Intermediate</option>
@@ -137,7 +221,8 @@ const AiPracticeQuiz = () => {
                       type="number"
                       min="5"
                       max="50"
-                      defaultValue="10"
+                      value={quizForm.numQuestions}
+                      onChange={handleInputChange}
                       className="w-full rounded-md border border-gray-300 p-2 dark:bg-black-800 dark:border-gray-700"
                     />
                   </div>
@@ -151,20 +236,36 @@ const AiPracticeQuiz = () => {
                         <input
                           type="checkbox"
                           id="multiple-choice"
-                          defaultChecked
+                          checked={quizForm.questionTypes.multipleChoice}
+                          onChange={handleCheckboxChange}
                         />
                         <label htmlFor="multiple-choice">Multiple Choice</label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="true-false" />
+                        <input 
+                          type="checkbox" 
+                          id="true-false"
+                          checked={quizForm.questionTypes.trueFalse}
+                          onChange={handleCheckboxChange}
+                        />
                         <label htmlFor="true-false">True/False</label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="short-answer" />
+                        <input 
+                          type="checkbox" 
+                          id="short-answer"
+                          checked={quizForm.questionTypes.shortAnswer}
+                          onChange={handleCheckboxChange}
+                        />
                         <label htmlFor="short-answer">Short Answer</label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="fill-blanks" />
+                        <input 
+                          type="checkbox" 
+                          id="fill-blanks"
+                          checked={quizForm.questionTypes.fillBlanks}
+                          onChange={handleCheckboxChange}
+                        />
                         <label htmlFor="fill-blanks">Fill in the Blanks</label>
                       </div>
                     </div>
@@ -181,13 +282,28 @@ const AiPracticeQuiz = () => {
                       id="instructions"
                       placeholder="Any specific topics to focus on or other instructions..."
                       rows="3"
+                      value={quizForm.instructions}
+                      onChange={handleInputChange}
                       className="w-full rounded-md border border-gray-300 p-2 dark:bg-black-800 dark:border-gray-700"
                     />
                   </div>
                 </div>
 
                 <DrawerFooter>
-                  <Button className="w-full">Generate Quiz</Button>
+                  <Button 
+                    className="w-full" 
+                    onClick={handleGenerateQuiz}
+                    disabled={isLoading || !quizForm.topic}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating Quiz & Redirecting...
+                      </>
+                    ) : (
+                      'Generate Quiz'
+                    )}
+                  </Button>
                   <DrawerClose asChild>
                     <Button variant="outline" className="w-full">
                       Cancel
